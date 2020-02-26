@@ -1,9 +1,27 @@
 #include <windows.h>
+#include <string>
 
-#include <fstream>
-static HWND bhClick;
+static HWND bhStart;
 static HWND bhStop;
 static HWND mcH;
+
+BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam)
+{
+	// 9 chars - M I N E C R A F T
+	char buffer[10];
+	
+	GetWindowTextA(hwnd,  buffer, 10);
+	
+	std::string winName (buffer);
+	
+	if(winName == "Minecraft"){
+		mcH = hwnd;
+		return false;
+	}
+	
+	return true;
+}
+
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch(msg)
@@ -16,15 +34,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         break;
         case WM_COMMAND:
             {
-                if(mcH == 0){
-                    MessageBox(hwnd, "Window not found! Check your target.ini file", "Error", MB_OK | MB_ICONWARNING);
-                    break;
-                }
+		EnumWindows(EnumWindowsProc, NULL);
+				
                 if(wParam == BN_CLICKED && (HWND)lParam == bhStop){
                     PostMessageA(mcH,WM_RBUTTONUP,MK_RBUTTON,0);
                     break;
                 }
-                if(wParam == BN_CLICKED && (HWND)lParam == bhClick){
+                if(wParam == BN_CLICKED && (HWND)lParam == bhStart){
                     PostMessageA(mcH,WM_RBUTTONDOWN,MK_RBUTTON,0);
                     break;
                 }
@@ -44,18 +60,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     HWND hwnd;
     MSG Msg;
-    std::ifstream targetFile;
-    char targetName[128];
-
-    targetFile.open("target.ini");
-    int check = targetFile.peek();
-    if(check == EOF){
-        MessageBox(hwnd, "target.ini is empty!", "Error", MB_OK | MB_ICONWARNING | MB_APPLMODAL);
-        return 0;
-    }
-    targetFile.getline(targetName, 128);
-    targetFile.close();
-    mcH = FindWindowA(NULL, targetName);
 
     //Registering the Window Class
     wc.cbSize        = sizeof(WNDCLASSEX);
@@ -86,7 +90,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         CW_USEDEFAULT, CW_USEDEFAULT, 240, 100,
         NULL, NULL, hInstance, NULL);
 		
-    bhClick = CreateWindow(
+    bhStart = CreateWindow(
         "BUTTON",
         "Start",
         WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,
@@ -121,5 +125,3 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     }
     return Msg.wParam;
 }
-
-
